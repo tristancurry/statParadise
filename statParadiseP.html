@@ -19,8 +19,21 @@ canvas {
     <canvas id="myCanvas" height="450" width="450"></canvas>
 </div>
 
+<p id="Statistics"></p>
 
+<div>
+<input type="range" id="proportion"  value="50">
 
+<p id="demo"></p>
+
+<input type="range" id="trail"  value="97">
+
+<p id="trails"></p>
+
+<input type="range" id="part"  value="85">
+
+<p id="partNumber"></p>
+</div>
 
 <script>
 	
@@ -28,6 +41,7 @@ canvas {
 	var mouseY = 0;
 	
 	var title = document.querySelector("#theTitle");
+	var stats = document.querySelector("#Statistics");
 	var mainCanvas = document.querySelector("#myCanvas");
 	var mainContext = mainCanvas.getContext("2d");
 	mainCanvas.addEventListener('mousemove', function(event){
@@ -41,7 +55,10 @@ canvas {
 	var canvasHeight = mainCanvas.height;
 	
 	var particles = new Array();
-	
+	var xCounter = 0;
+var yCounter = 0;
+
+
 	var requestAnimationFrame = window.requestAnimationFrame || 
                             window.mozRequestAnimationFrame || 
                             window.webkitRequestAnimationFrame || 
@@ -58,39 +75,26 @@ canvas {
 							
 function Member(posX, posY, size, shade) {
 	
-	this.size = 20;
+
 	this.posX = posX;
 	this.posY = posY;
-	this.accX = 0;
-	this.accY = 0;
+	this.size = size;
 	this.shade = shade;
 
 	
 	
-	this.fillStyle = "rgb(shade,shade,shade)";
+	this.fillStyle = "rgba(" + this.shade +"," + this.shade +"," + this.shade +",1)";
 	
-	this.update = function(){
-		
-		this.velX = this.velX + this.accX;
-		this.velY = this.velY + this.accY;
-		this.posX = this.posX + this.velX;
-		this.posY = this.posY + this.velY;	
-		
-	}
+
 	
 	this.render = function(){
 
 		mainContext.beginPath();
-		mainContext.arc(this.posX, this.posY, this.radius, 0, 2*Math.PI, false);
+		mainContext.arc(this.posX, this.posY, this.size, 0, 2*Math.PI, false);
 		mainContext.closePath();
 		mainContext.fillStyle = this.fillStyle;
 		mainContext.fill();
 		
-		mainContext.beginPath();
-		mainContext.arc(this.posX, this.posY, 0.5*this.radius, 0, 2*Math.PI, false);
-		mainContext.closePath();
-		mainContext.fillStyle = "rgba(255,255,255,0.9)"
-		mainContext.fill();
 	}
 
 }
@@ -99,10 +103,10 @@ function Member(posX, posY, size, shade) {
 
 function setupParticles(){
 	for(var i = 0; i < 100; i++){
-		var randX = 3*(Math.random() - 0.5);
-		var randY = 3*(Math.random() - 0.5);
+		var randSize = 30*Math.random();
+		var randShade = 255*(Math.random());
 		
-		var party = new Particle(225, 225, randX, randY, 1,1);
+		var party = new Member(225, 225, randSize, randShade);
 		particles.push(party);
 
 		
@@ -112,73 +116,61 @@ function setupParticles(){
 
 function drawParticles(){
 
-var g = getTrailLength();
-mainContext.fillStyle = "rgba(20,0,0," + g + ")";
-mainContext.fillRect(0, 0, canvasWidth, canvasHeight);
-		
-if(particles.length < getParticleNumber()){
-createParticle();
+var avgSize = 0;
+var stdSize = 0;
+var avgShade = 0;
+var stdShade = 0;
+
+var xIncrement = Math.floor((canvasWidth-20)/10);
+var yIncrement = Math.floor(canvasWidth/10);
+
+xCounter = xCounter + xIncrement;
+
+
+if(xCounter > canvasWidth){
+xCounter = xIncrement;
+yCounter = yCounter + yIncrement;
 }
 
+var g = getTrailLength();
+//mainContext.fillStyle = "rgba(20,20,20," + g + ")";
+//mainContext.fillRect(0, 0, canvasWidth, canvasHeight);
 		
-		for(var i = particles.length - 1; i >= 0; i--) {
-		var myParticle = particles[i];
-		
-		if(!myParticle.alive){
-		particles.splice(i,1);
-		}
-		
-		myParticle.accX = 0;
-		myParticle.accY = 0;
-		
-	
-
-	}
-	
-	
-	//calculate accelerations
-	
-		for(var i = 0; i < particles.length; i++){
-		if(i < particles.length - 1){
-			var thisP = particles[i];
-			for(var j = particles.length - 1; j >= i; j--){
-				var thatP = particles[j];
-				var distX = thisP.posX - thatP.posX;
-				var distY = thisP.posY - thatP.posY;
-				var distsq = Math.pow(distX,2) + Math.pow(distY,2);
-				if(distsq > 0){
-				var dist = Math.sqrt(distsq);
-				var F = 1*thisP.charge*thatP.charge/distsq;
-				
-				thisP.accX = thisP.accX + 1*(F*distX/(thisP.mass*dist));
-				thisP.accY = thisP.accY + 1*(F*distY/(thisP.mass*dist));
-				
-				thatP.accX = thatP.accX + -1*(F*distX/(thatP.mass*dist));
-				thatP.accY = thatP.accY + -1*(F*distY/(thatP.mass*dist));
-				}
-	
-			}
-		}
-	}
-	
-
+if(particles.length < /*getParticleNumber()*/ 100){
+createParticle(xCounter, yCounter);
+}
 
 	for(var i = 0; i < particles.length; i++) {
 		var myParticle = particles[i];
-		myParticle.update();
-		if(myParticle.posX > canvasWidth || myParticle.posX < 0 || myParticle.posY > canvasHeight || myParticle.posY < 0){
-		myParticle.alive = false;
-		}
-		myParticle.render();	
+		myParticle.render();
+		if(particles.length > 0){
+			avgSize = avgSize + (1.0/particles.length)*myParticle.size;
+			avgShade = avgShade + (1.0/particles.length)*myParticle.shade;
+		}		
 
 	}
 	
-	
-	
+	for(var i = 0; i < particles.length; i++) {
+		var myParticle = particles[i];
+		if(particles.length > 1){
+			stdSize = stdSize + (1/(particles.length - 1))*Math.pow(myParticle.size - avgSize,2);
+			stdShade = stdShade + (1/(particles.length - 1))*Math.pow(myParticle.shade - avgShade,2);
+		}		
+
+
+	}	
+
+
+		stdSize = Math.sqrt(stdSize);
+		stdShade = Math.sqrt(stdShade);
+		var SEMSize = stdSize/10;
+		var SEMShade = stdShade/10;
 
 	
 	
-	title.textContent = "Number of particles = " + particles.length;
+	title.textContent = "Number of members = " + particles.length;
+	stats.textContent = "Average size = "  + avgSize + ", Std. size = " + stdSize + "\r, Average shade = " + avgShade + ", Std. shade = " + stdShade;
+	
 	requestAnimationFrame(drawParticles);
 }
 
@@ -204,22 +196,51 @@ function getParticleNumber() {
 }
 
 
-function createParticle(){
-		var randX = 20*(Math.random()-0.5);
-		var randY = 20*(Math.random()-0.5);
-		var chargey = Math.random();
-		var massey = 1;
-		if(chargey > getProportion()){
-		chargey = 1;
-		} else {
-		chargey = -1;
-		massey = 1
-		}
-		var party = new Particle(mouseX + randX, mouseY + randY, 0.05*randX, 0.05*randY, chargey,massey);
+function createParticle(X,Y){
+		var randSize = Math.floor(sampleFromNormal(15,3));
+		var randShade = Math.floor(sampleFromNormal(125, 40));
+		
+		//if(randSize > 0 && randShade > 0 && randShade < 255){
+		
+		var party = new Member(X, Y, randSize, randShade);
 		particles.push(party);
+
+		//} else {
+		//alert("Out of range! randSize = "+ randSize +" randShade = "+ randShade);
+		//}
+}
+
+function sampleFromStandardNormal(){
+
+var s = 1;
+
+do{
+var u = 2*Math.random() - 1;
+var v = 2*Math.random() - 1;
+
+s = Math.pow(u,2) + Math.pow(v,2);
+}
+while(s >= 1);
+var z = u*Math.sqrt(-2*Math.log(s)/s);
+
+return(z);
+}
+
+function mapToDist(z, mu, sigma){
+
+return(mu + z*sigma);
 
 }
 
+function sampleFromNormal(mu, sigma){
+
+var crom = sampleFromStandardNormal();
+
+var r = mapToDist(crom, mu, sigma);
+
+return r;
+
+}
 
 
 /*function createParticle(){
@@ -238,7 +259,7 @@ function createParticle(){
 
 
 //setupParticles();
-mainContext.fillStyle = "rgba(20,0,0,1)";
+//mainContext.fillStyle = "rgba(20,0,0,1)";
 mainContext.fillRect(0, 0, canvasWidth, canvasHeight);
 drawParticles();	
 
