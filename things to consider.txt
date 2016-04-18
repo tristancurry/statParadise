@@ -1,0 +1,18 @@
+Sampling from different distributions
+
+Normal:
+inverse CDF is not available analytically.
+Use rejection sampling if computationally OK - or use polar form of Box-Muller sampling
+[s = U^2 + V^2, z1 = u*sqrt((-2ln(s))/s)]
+
+Exponential: p(x) = A*exp(kx)
+Normalise over the domain.
+inverse CDF is analytic
+x = ln[(k/A)*(CDF + B)]/k,  where B = exp(k*E), E is the lower limit of the domain
+
+Linear: p(x) = ax + b, positive over the domain of possible values for x
+Normalise over the domain.
+CDF is a quadratic that can be inverted with some care...
+
+Uniform:
+easy

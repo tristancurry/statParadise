@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html>
+  
+<head>
+<meta charset="utf-8">
+<title>Simple Particles</title>
+<style>
+canvas {
+    border: 3px #CCC solid;
+}
+
+
+
+input[type=range] {
+  -webkit-appearance: none;
+  margin: 18px 0;
+  width: 450px;
+}
+input[type=range]:focus {
+  outline: none;
+}
+input[type=range]::-webkit-slider-runnable-track {
+  width: 450px;
+  height: 8.4px;
+  cursor: pointer;
+  animate: 0.2s;
+  box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+  background: #3071a9;
+  border-radius: 1.3px;
+  border: 0.2px solid #010101;
+}
+input[type=range]::-webkit-slider-thumb {
+  box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+  border: 1px solid #000000;
+  height: 36px;
+  width: 16px;
+  border-radius: 3px;
+  background: #ffffff;
+  cursor: pointer;
+  -webkit-appearance: none;
+  margin-top: -14px;
+}
+input[type=range]:focus::-webkit-slider-runnable-track {
+  background: #367ebd;
+}
+input[type=range]::-moz-range-track {
+  width: 450px;
+  height: 8.4px;
+  cursor: pointer;
+  animate: 0.2s;
+  box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+  background: #3071a9;
+  border-radius: 1.3px;
+  border: 0.2px solid #010101;
+}
+input[type=range]::-moz-range-thumb {
+  box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+  border: 1px solid #000000;
+  height: 36px;
+  width: 16px;
+  border-radius: 3px;
+  background: #ffffff;
+  cursor: pointer;
+}
+input[type=range]::-ms-track {
+  width: 450px;
+  height: 8.4px;
+  cursor: pointer;
+  animate: 0.2s;
+  background: transparent;
+  border-color: transparent;
+  border-width: 16px 0;
+  color: transparent;
+}
+input[type=range]::-ms-fill-lower {
+  background: #2a6495;
+  border: 0.2px solid #010101;
+  border-radius: 2.6px;
+  box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+}
+input[type=range]::-ms-fill-upper {
+  background: #3071a9;
+  border: 0.2px solid #010101;
+  border-radius: 2.6px;
+  box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+}
+input[type=range]::-ms-thumb {
+  box-shadow: 1px 1px 1px #000000, 0px 0px 1px #0d0d0d;
+  border: 1px solid #000000;
+  height: 36px;
+  width: 16px;
+  border-radius: 3px;
+  background: #ffffff;
+  cursor: pointer;
+}
+input[type=range]:focus::-ms-fill-lower {
+  background: #3071a9;
+}
+input[type=range]:focus::-ms-fill-upper {
+  background: #367ebd;
+}
+
+
+</style>
+</head>
+<body>
+
+<h1 id="theTitle">Particles</h1>
+<h2 id="status">0 | 0</h2>
+
+<div id="container">
+    <canvas id="myCanvas" height="450" width="450"></canvas>
+</div>
+
+
+<input type="range" id="proportion"  value="50">
+
+<p id="demo"></p>
+
+<input type="range" id="trail"  value="97">
+
+<p id="trails"></p>
+
+<input type="range" id="part"  value="85">
+
+<p id="partNumber"></p>
+
+<script>
+//most css from https://css-tricks.com/styling-cross-browser-compatible-range-inputs-css/	
+	var mouseX = 0;
+	var mouseY = 0;
+	
+	var title = document.querySelector("#theTitle");
+	var mainCanvas = document.querySelector("#myCanvas");
+	var mainContext = mainCanvas.getContext("2d");
+	mainCanvas.addEventListener('mousemove', function(event){
+			mouseX = event.pageX - mainCanvas.offsetLeft;
+			mouseY = event.pageY - mainCanvas.offsetTop;
+			var status = document.getElementById('status');
+			status.innerHTML = mouseX + " | " + mouseY
+	});
+	
+	var canvasWidth = mainCanvas.width;
+	var canvasHeight = mainCanvas.height;
+	
+	var particles = new Array();
+	
+	var requestAnimationFrame = window.requestAnimationFrame || 
+                            window.mozRequestAnimationFrame || 
+                            window.webkitRequestAnimationFrame || 
+                            window.msRequestAnimationFrame;
+							
+							
+
+					
+
+
+							
+
+//Object definitions							
+							
+function Particle(posX, posY, velX, velY, charge, mass) {
+	
+	this.radius = 3;
+	this.posX = posX;
+	this.posY = posY;
+	this.velX = velX;
+	this.velY = velY;
+	this.accX = 0;
+	this.accY = 0;
+	this.charge = charge;
+	this.mass = mass;	
+	this.alive = true;
+	
+	if(charge > 0){
+	this.fillStyle = "rgba(0,140,255,0.5)";
+	} else {
+	this.fillStyle = "rgba(255,140,0,0.5)"
+	}
+	
+	this.update = function(){
+		
+		this.velX = this.velX + this.accX;
+		this.velY = this.velY + this.accY;
+		this.posX = this.posX + this.velX;
+		this.posY = this.posY + this.velY;	
+		
+	}
+	
+	this.render = function(){
+
+		mainContext.beginPath();
+		mainContext.arc(this.posX, this.posY, this.radius, 0, 2*Math.PI, false);
+		mainContext.closePath();
+		mainContext.fillStyle = this.fillStyle;
+		mainContext.fill();
+		
+		mainContext.beginPath();
+		mainContext.arc(this.posX, this.posY, 0.5*this.radius, 0, 2*Math.PI, false);
+		mainContext.closePath();
+		mainContext.fillStyle = "rgba(255,255,255,0.9)"
+		mainContext.fill();
+	}
+
+}
+
+//functions
+
+function setupParticles(){
+	for(var i = 0; i < 100; i++){
+		var randX = 3*(Math.random() - 0.5);
+		var randY = 3*(Math.random() - 0.5);
+		
+		var party = new Particle(225, 225, randX, randY, 1,1);
+		particles.push(party);
+
+		
+	}
+
+}
+
+function drawParticles(){
+
+var g = getTrailLength();
+mainContext.fillStyle = "rgba(20,0,0," + g + ")";
+mainContext.fillRect(0, 0, canvasWidth, canvasHeight);
+		
+if(particles.length < getParticleNumber()){
+createParticle();
+}
+
+		
+		for(var i = particles.length - 1; i >= 0; i--) {
+		var myParticle = particles[i];
+		
+		if(!myParticle.alive){
+		particles.splice(i,1);
+		}
+		
+		myParticle.accX = 0;
+		myParticle.accY = 0;
+		
+	
+
+	}
+	
+	
+	//calculate accelerations
+	
+		for(var i = 0; i < particles.length; i++){
+		if(i < particles.length - 1){
+			var thisP = particles[i];
+			for(var j = particles.length - 1; j >= i; j--){
+				var thatP = particles[j];
+				var distX = thisP.posX - thatP.posX;
+				var distY = thisP.posY - thatP.posY;
+				var distsq = Math.pow(distX,2) + Math.pow(distY,2);
+				if(distsq > 0){
+				var dist = Math.sqrt(distsq);
+				var F = 1*thisP.charge*thatP.charge/distsq;
+				
+				thisP.accX = thisP.accX + 1*(F*distX/(thisP.mass*dist));
+				thisP.accY = thisP.accY + 1*(F*distY/(thisP.mass*dist));
+				
+				thatP.accX = thatP.accX + -1*(F*distX/(thatP.mass*dist));
+				thatP.accY = thatP.accY + -1*(F*distY/(thatP.mass*dist));
+				}
+	
+			}
+		}
+	}
+	
+
+
+	for(var i = 0; i < particles.length; i++) {
+		var myParticle = particles[i];
+		myParticle.update();
+		if(myParticle.posX > canvasWidth || myParticle.posX < 0 || myParticle.posY > canvasHeight || myParticle.posY < 0){
+		myParticle.alive = false;
+		}
+		myParticle.render();	
+
+	}
+	
+	
+	
+
+	
+	
+	title.textContent = "Number of particles = " + particles.length;
+	requestAnimationFrame(drawParticles);
+}
+
+function getProportion() {
+    var x = document.getElementById("proportion").value;
+    document.getElementById("demo").innerHTML = "Emitter red proportion = " + x + "%";
+    return x/100;
+	
+}
+
+function getTrailLength() {
+    var x = document.getElementById("trail").value;
+    document.getElementById("trails").innerHTML = "Trail persistence = " + x + "%";
+    return (100-x)/100;
+	
+}
+
+function getParticleNumber() {
+    var x = document.getElementById("part").value;
+    document.getElementById("partNumber").innerHTML = "Number of particles = " + x;
+    return x;
+	
+}
+
+
+function createParticle(){
+		var randX = 20*(Math.random()-0.5);
+		var randY = 20*(Math.random()-0.5);
+		var chargey = Math.random();
+		var massey = 1;
+		if(chargey > getProportion()){
+		chargey = 1;
+		} else {
+		chargey = -1;
+		massey = 1
+		}
+		var party = new Particle(mouseX + randX, mouseY + randY, 0.05*randX, 0.05*randY, chargey,massey);
+		particles.push(party);
+
+}
+
+
+
+/*function createParticle(){
+		var randX = 5*(Math.random());
+		var randY = canvasHeight*(Math.random());
+		var chargey = Math.random();
+		if(chargey > getProportion()){
+		chargey = 1;
+		} else {
+		chargey = -1;
+		}
+		var party = new Particle(0,randY, randX, 0, chargey,1);
+		particles.push(party);
+
+}*/
+
+
+//setupParticles();
+mainContext.fillStyle = "rgba(20,0,0,1)";
+mainContext.fillRect(0, 0, canvasWidth, canvasHeight);
+drawParticles();	
+
+</script>
+</body>
+</html>	
+
