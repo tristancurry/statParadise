@@ -22,17 +22,22 @@ canvas {
 <p id="Statistics"></p>
 
 <div>
-<input type="range" id="proportion"  value="50">
+<p id="sampleSizeSetting"></p>
+<input type="range" id="sampleSize"  value="25">
 
-<p id="demo"></p>
+<p id="popMeanSizeSetting"></p>
+<input type="range" id="popMeanSize"  value="25">
 
-<input type="range" id="trail"  value="97">
+<p id="popSDSizeSetting"></p>
+<input type="range" id="popSDSize"  value="100">
 
-<p id="trails"></p>
+<p id="popMeanShadeSetting"></p>
+<input type="range" id="popMeanShade"  value="25">
 
-<input type="range" id="part"  value="85">
+<p id="popSDShadeSetting"></p>
+<input type="range" id="popSDShade"  value="100">
 
-<p id="partNumber"></p>
+<button type="button" id="resample" onclick="resample()">Resample!</button>
 </div>
 
 <script>
@@ -56,7 +61,7 @@ canvas {
 	
 	var particles = new Array();
 	var xCounter = 0;
-var yCounter = 0;
+	var yCounter = 0;
 
 
 	var requestAnimationFrame = window.requestAnimationFrame || 
@@ -65,11 +70,146 @@ var yCounter = 0;
                             window.msRequestAnimationFrame;
 							
 							
+	var sampled = false;					
 
-					
 
 
-							
+//functions
+
+
+
+function drawParticles(){
+
+	var n = getSampleSize();
+	var sqrtn = Math.ceil(Math.sqrt(n));
+	var spacingX = Math.floor(canvasWidth/(1+sqrtn));
+	var spacingY = Math.floor(canvasHeight/(1+sqrtn));
+
+	var avgSize = 0;
+	var stdSize = 0;
+	var avgShade = 0;
+	var stdShade = 0;
+
+	var xIncrement = Math.floor((canvasWidth-20)/10);
+	var yIncrement = Math.floor(canvasWidth/10);
+
+
+	mainContext.fillStyle = "rgba(120,120,180, 1)";
+	mainContext.fillRect(0, 0, canvasWidth, canvasHeight);
+
+	if(!sampled){
+		for(var i = 0; i < n; i++){
+			var X = spacingX*(1 + i%sqrtn);
+			var Y = spacingY*(1 + Math.floor(i/sqrtn));
+			createParticle(X,Y);
+		}
+		sampled = !sampled;
+	}
+
+	if(particles.length > 0){
+	for(var i = 0; i < particles.length; i++) {
+		var myParticle = particles[i];
+		myParticle.render();
+		avgSize = avgSize + (1/particles.length)*myParticle.size;
+		avgShade = avgShade + (1/particles.length)*myParticle.shade;
+
+	}
+	}
+	
+	for(var i = 0; i < particles.length; i++) {
+		var myParticle = particles[i];
+		if(particles.length > 1){
+			stdSize = stdSize + (1/(particles.length - 1))*Math.pow(myParticle.size - avgSize,2);
+			stdShade = stdShade + (1/(particles.length - 1))*Math.pow(myParticle.shade - avgShade,2);
+		}		
+	}	
+
+
+	
+	title.textContent = "Number of members = " + particles.length;
+	stats.textContent = "(sample) mean size = "  + avgSize.toFixed(3) + " pixels, st.dev size = " + stdSize.toFixed(3) + " pixels, mean shade = " + avgShade.toFixed(3) + ", st.dev shade = " + stdShade.toFixed(3);
+	
+	document.getElementById("sampleSizeSetting").innerHTML = "Sample size = " + getSampleSize() + " members.";
+	document.getElementById("popMeanSizeSetting").innerHTML = "(population) mean size = " + getPopMeanSize().toFixed(2) + " pixels.";
+	    document.getElementById("popSDSizeSetting").innerHTML = "(population) standard dev of size = " + getPopSDSize().toFixed(2) + " pixels.";
+		document.getElementById("popMeanShadeSetting").innerHTML = "(population) mean shade = " + getPopMeanShade().toFixed(2);
+		    document.getElementById("popSDShadeSetting").innerHTML = "(population) standard dev of shade = " + getPopSDShade().toFixed(2);
+	
+	requestAnimationFrame(drawParticles);
+	
+	
+}
+
+function resample(){
+	sampled = false;
+	particles.splice(0,particles.length);
+}
+
+function getSampleSize() {
+    var x = 4*document.getElementById("sampleSize").value;
+    return x;	
+}
+
+function getPopMeanSize() {
+    var x = 10 + 0.4*document.getElementById("popMeanSize").value;
+    return x;	
+}
+
+function getPopSDSize() {
+    var x = getPopMeanSize()*document.getElementById("popSDSize").value/500;
+    return x;	
+}
+
+
+function getPopMeanShade() {
+    var x = 40 + 1.75*document.getElementById("popMeanShade").value;
+    return x;	
+}
+
+function getPopSDShade() {
+	var pms = getPopMeanShade();
+	var x = 125;
+	if(pms <= 125){
+    x = pms*document.getElementById("popSDShade").value/500;
+	} else {
+	x = (255 - pms)*document.getElementById("popSDShade").value/500;
+	}
+    return x;	
+}
+
+
+function createParticle(X,Y){
+	var randSize = Math.round(sampleFromNormal(getPopMeanSize(),getPopSDSize()));
+	var randShade = Math.round(sampleFromNormal(getPopMeanShade(), getPopSDShade()));
+		
+	var party = new Member(X, Y, randSize, randShade);
+	particles.push(party);
+}
+
+function sampleFromStandardNormal(){
+
+	var s = 0;
+	do{
+		var u = 2*(Math.random() - 0.5);
+		var v = 2*(Math.random() - 0.5);
+		s = Math.pow(u,2) + Math.pow(v,2);
+	} while(s >= 1 || s == 0);
+	
+	var z = u*Math.sqrt(-2*Math.log(s)/s);
+	return(z);
+}
+
+function mapToNormalDist(z, mu, sigma){
+	return(mu + z*sigma);
+}
+
+function sampleFromNormal(mu, sigma){
+	var crom = sampleFromStandardNormal();
+	var r = mapToNormalDist(crom, mu, sigma);
+	return r;
+}
+
+
 
 //Object definitions							
 							
@@ -92,174 +232,40 @@ function Member(posX, posY, size, shade) {
 		mainContext.beginPath();
 		mainContext.arc(this.posX, this.posY, this.size, 0, 2*Math.PI, false);
 		mainContext.closePath();
+		mainContext.strokeStyle = "rgba(0,0,0,1)"
+		mainContext.lineWidth = 0.5;
 		mainContext.fillStyle = this.fillStyle;
 		mainContext.fill();
+		mainContext.stroke();
 		
+		mainContext.beginPath();
+		mainContext.arc(this.posX - 0.3*this.size, this.posY - 0.3*this.size, 0.25*this.size, 0, 2*Math.PI, false);
+		mainContext.closePath();
+		mainContext.fillStyle = "rgba(255,255,255,1)";
+		mainContext.fill();
+		mainContext.stroke();
+		
+		mainContext.beginPath();
+		mainContext.arc(this.posX + 0.3*this.size, this.posY - 0.3*this.size, 0.25*this.size, 0, 2*Math.PI, false);
+		mainContext.closePath();
+		mainContext.fill();
+		mainContext.stroke();
+		
+		mainContext.beginPath();
+		mainContext.arc(this.posX - 0.3*this.size, this.posY - 0.3*this.size, 0.25*0.40*this.size, 0, 2*Math.PI, false);
+		mainContext.closePath();
+		mainContext.fillStyle = "rgba(0,0,0,1)";
+		mainContext.fill();
+		
+		mainContext.arc(this.posX + 0.3*this.size, this.posY - 0.3*this.size, 0.25*0.40*this.size, 0, 2*Math.PI, false);
+		mainContext.closePath();
+		mainContext.fill();
+
 	}
 
 }
 
-//functions
 
-function setupParticles(){
-	for(var i = 0; i < 100; i++){
-		var randSize = 30*Math.random();
-		var randShade = 255*(Math.random());
-		
-		var party = new Member(225, 225, randSize, randShade);
-		particles.push(party);
-
-		
-	}
-
-}
-
-function drawParticles(){
-
-var avgSize = 0;
-var stdSize = 0;
-var avgShade = 0;
-var stdShade = 0;
-
-var xIncrement = Math.floor((canvasWidth-20)/10);
-var yIncrement = Math.floor(canvasWidth/10);
-
-xCounter = xCounter + xIncrement;
-
-
-if(xCounter > canvasWidth){
-xCounter = xIncrement;
-yCounter = yCounter + yIncrement;
-}
-
-var g = getTrailLength();
-//mainContext.fillStyle = "rgba(20,20,20," + g + ")";
-//mainContext.fillRect(0, 0, canvasWidth, canvasHeight);
-		
-if(particles.length < /*getParticleNumber()*/ 100){
-createParticle(xCounter, yCounter);
-}
-
-	for(var i = 0; i < particles.length; i++) {
-		var myParticle = particles[i];
-		myParticle.render();
-		if(particles.length > 0){
-			avgSize = avgSize + (1.0/particles.length)*myParticle.size;
-			avgShade = avgShade + (1.0/particles.length)*myParticle.shade;
-		}		
-
-	}
-	
-	for(var i = 0; i < particles.length; i++) {
-		var myParticle = particles[i];
-		if(particles.length > 1){
-			stdSize = stdSize + (1/(particles.length - 1))*Math.pow(myParticle.size - avgSize,2);
-			stdShade = stdShade + (1/(particles.length - 1))*Math.pow(myParticle.shade - avgShade,2);
-		}		
-
-
-	}	
-
-
-		stdSize = Math.sqrt(stdSize);
-		stdShade = Math.sqrt(stdShade);
-		var SEMSize = stdSize/10;
-		var SEMShade = stdShade/10;
-
-	
-	
-	title.textContent = "Number of members = " + particles.length;
-	stats.textContent = "Average size = "  + avgSize + ", Std. size = " + stdSize + "\r, Average shade = " + avgShade + ", Std. shade = " + stdShade;
-	
-	requestAnimationFrame(drawParticles);
-}
-
-function getProportion() {
-    var x = document.getElementById("proportion").value;
-    document.getElementById("demo").innerHTML = "Emitter red proportion = " + x + "%";
-    return x/100;
-	
-}
-
-function getTrailLength() {
-    var x = document.getElementById("trail").value;
-    document.getElementById("trails").innerHTML = "Trail persistence = " + x + "%";
-    return (100-x)/100;
-	
-}
-
-function getParticleNumber() {
-    var x = document.getElementById("part").value;
-    document.getElementById("partNumber").innerHTML = "Number of particles = " + x;
-    return x;
-	
-}
-
-
-function createParticle(X,Y){
-		var randSize = Math.floor(sampleFromNormal(15,3));
-		var randShade = Math.floor(sampleFromNormal(125, 40));
-		
-		//if(randSize > 0 && randShade > 0 && randShade < 255){
-		
-		var party = new Member(X, Y, randSize, randShade);
-		particles.push(party);
-
-		//} else {
-		//alert("Out of range! randSize = "+ randSize +" randShade = "+ randShade);
-		//}
-}
-
-function sampleFromStandardNormal(){
-
-var s = 1;
-
-do{
-var u = 2*Math.random() - 1;
-var v = 2*Math.random() - 1;
-
-s = Math.pow(u,2) + Math.pow(v,2);
-}
-while(s >= 1);
-var z = u*Math.sqrt(-2*Math.log(s)/s);
-
-return(z);
-}
-
-function mapToDist(z, mu, sigma){
-
-return(mu + z*sigma);
-
-}
-
-function sampleFromNormal(mu, sigma){
-
-var crom = sampleFromStandardNormal();
-
-var r = mapToDist(crom, mu, sigma);
-
-return r;
-
-}
-
-
-/*function createParticle(){
-		var randX = 5*(Math.random());
-		var randY = canvasHeight*(Math.random());
-		var chargey = Math.random();
-		if(chargey > getProportion()){
-		chargey = 1;
-		} else {
-		chargey = -1;
-		}
-		var party = new Particle(0,randY, randX, 0, chargey,1);
-		particles.push(party);
-
-}*/
-
-
-//setupParticles();
-//mainContext.fillStyle = "rgba(20,0,0,1)";
 mainContext.fillRect(0, 0, canvasWidth, canvasHeight);
 drawParticles();	
 
