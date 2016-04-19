@@ -179,8 +179,8 @@ function getPopSDShade() {
 
 
 function createParticle(X,Y){
-	var randSize = Math.floor(sampleFromNormal(getPopMeanSize(),getPopSDSize()));
-	var randShade = Math.floor(sampleFromNormal(getPopMeanShade(), getPopSDShade()));
+	var randSize = Math.round(sampleFromNormal(getPopMeanSize(),getPopSDSize()));
+	var randShade = Math.round(sampleFromNormal(getPopMeanShade(), getPopSDShade()));
 		
 	var party = new Member(X, Y, randSize, randShade);
 	particles.push(party);
@@ -188,12 +188,12 @@ function createParticle(X,Y){
 
 function sampleFromStandardNormal(){
 
-	var s = 1;
+	var s = 0;
 	do{
 		var u = 2*(Math.random() - 0.5);
 		var v = 2*(Math.random() - 0.5);
 		s = Math.pow(u,2) + Math.pow(v,2);
-	} while(s >= 1);
+	} while(s >= 1 || s == 0);
 	
 	var z = u*Math.sqrt(-2*Math.log(s)/s);
 	return(z);
