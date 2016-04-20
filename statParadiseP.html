@@ -181,10 +181,13 @@ function getPopSDShade() {
 function createParticle(X,Y){
 	var randSize = Math.round(sampleFromNormal(getPopMeanSize(),getPopSDSize()));
 	var randShade = Math.round(sampleFromNormal(getPopMeanShade(), getPopSDShade()));
-		
+	//rounding necessary as integers are needed for the relevant graphical methods.
 	var party = new Member(X, Y, randSize, randShade);
 	particles.push(party);
 }
+
+
+//the following functions basically implement Box-Muller/Marsaglia polar sampling to produce normally-distributed variables
 
 function sampleFromStandardNormal(){
 
