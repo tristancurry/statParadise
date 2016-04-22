@@ -94,7 +94,7 @@ function drawParticles(){
 	var yIncrement = Math.floor(canvasWidth/10);
 
 
-	mainContext.fillStyle = "rgba(120,120,180, 1)";
+	mainContext.fillStyle = "rgba(20,20,80, 1)";
 	mainContext.fillRect(0, 0, canvasWidth, canvasHeight);
 
 	if(!sampled){
@@ -181,8 +181,9 @@ function getPopSDShade() {
 function createParticle(X,Y){
 	var randSize = Math.round(sampleFromNormal(getPopMeanSize(),getPopSDSize()));
 	var randShade = Math.round(sampleFromNormal(getPopMeanShade(), getPopSDShade()));
+	var randShape = Math.round(Math.random());
 	//rounding necessary as integers are needed for the relevant graphical methods.
-	var party = new Member(X, Y, randSize, randShade);
+	var party = new Member(X, Y, randSize, randShade, randShape);
 	particles.push(party);
 }
 
@@ -216,24 +217,30 @@ function sampleFromNormal(mu, sigma){
 
 //Object definitions							
 							
-function Member(posX, posY, size, shade) {
+function Member(posX, posY, size, shade, shape) {
 	
 
 	this.posX = posX;
 	this.posY = posY;
 	this.size = size;
 	this.shade = shade;
+	this.compShade = 255 - this.shade;
+	this.shape = shape;
 
 	
 	
-	this.fillStyle = "rgba(" + this.shade +"," + this.shade +"," + this.shade +",1)";
+	this.fillStyle = "rgba(" + 255 +"," + this.shade +"," + 0 +",1)";
 	
 
 	
 	this.render = function(){
 
 		mainContext.beginPath();
+		if(shape == 0){
 		mainContext.arc(this.posX, this.posY, this.size, 0, 2*Math.PI, false);
+		} else {
+		mainContext.rect(this.posX - this.size, this.posY - this.size, 2*this.size, 2*this.size);
+	}
 		mainContext.closePath();
 		mainContext.strokeStyle = "rgba(0,0,0,1)"
 		mainContext.lineWidth = 0.5;
